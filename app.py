@@ -9,8 +9,6 @@ import base64
 app = Flask(__name__)
 CORS(app)
 
-# Cargar el modelo guardado
-# Asegúrate de tener tu modelo guardado en formato .h5 o SavedModel
 MODEL_PATH = 'pneumonia_model.hdf5'  # Cambia esto a la ruta de tu modelo
 model = None
 
@@ -19,14 +17,12 @@ def load_model():
     global model
     try:
         model = tf.keras.models.load_model(MODEL_PATH)
-        print("Modelo cargado exitosamente")
     except Exception as e:
         print(f"Error al cargar el modelo: {str(e)}")
 
 def preprocess_image(image, target_size=(224, 224)):
     """
     Preprocesa la imagen para el modelo
-    Ajusta target_size según las dimensiones que espera tu modelo
     """
     # Convertir a RGB si es necesario
     if image.mode != 'RGB':
@@ -38,17 +34,18 @@ def preprocess_image(image, target_size=(224, 224)):
     # Convertir a array numpy
     img_array = np.array(image)
     
-    # Normalizar (ajusta según tu preprocesamiento)
-    img_array = img_array / 255.0
+    # Normalizar
+    img_array = img_array / 150.0
     
-    # Agregar dimensión de batch
     img_array = np.expand_dims(img_array, axis=0)
     
     return img_array
 
 @app.route('/')
 def home():
-    """Endpoint de bienvenida"""
+    """
+    Endpoint inicial
+    """
     return jsonify({
         'message': 'API de Predicción de Neumonía',
         'status': 'online',
@@ -60,14 +57,13 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     """
-    Endpoint para predicción de neumonía
-    Acepta: imagen como archivo o base64
+    Endpoint para predicción de pneumonía
     """
     if model is None:
         return jsonify({'error': 'Modelo no cargado'}), 500
     
     try:
-        # Opción 1: Recibir imagen como archivo
+        # Opción file request
         if 'file' in request.files:
             file = request.files['file']
             if file.filename == '':
@@ -75,7 +71,7 @@ def predict():
             
             image = Image.open(file.stream)
         
-        # Opción 2: Recibir imagen como base64
+        # Opción base64
         elif 'image' in request.json:
             image_data = request.json['image']
             # Remover el prefijo data:image si existe
@@ -94,8 +90,7 @@ def predict():
         # Hacer predicción
         prediction = model.predict(processed_image, verbose=0)
         
-        # Interpretar resultado (ajusta según tu modelo)
-        # Asumiendo clasificación binaria: 0=Normal, 1=Neumonía
+        # Interpretar resultado
         probability = float(prediction[0][0])
         
         # Determinar clase
@@ -118,7 +113,9 @@ def predict():
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Endpoint para verificar el estado del servicio"""
+    """
+    Endpoint estado del servicio
+    """
     return jsonify({
         'status': 'healthy',
         'model_loaded': model is not None
