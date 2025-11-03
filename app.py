@@ -11,7 +11,7 @@ CORS(app)
 
 # Cargar el modelo guardado
 # Asegúrate de tener tu modelo guardado en formato .h5 o SavedModel
-MODEL_PATH = 'pneumonia_model.h5'  # Cambia esto a la ruta de tu modelo
+MODEL_PATH = 'pneumonia_model.hdf5'  # Cambia esto a la ruta de tu modelo
 model = None
 
 def load_model():
